@@ -26,7 +26,7 @@ cpu_op=$(expr 100 - $cpul)
 cpu_fin=$(printf "%.1f" $cpu_op)
 
 # LAST BOOT
-lb=$(who -b | awk '$1 == "system" {print $3 " " $4}')
+lb=$(who -b | awk '{print $(NF-1), $NF}')
 
 # LVM USE
 lvmu=$(if [ $(lsblk | grep "lvm" | wc -l) -gt 0 ]; then echo yes; else echo no; fi)
