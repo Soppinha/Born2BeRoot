@@ -38,8 +38,8 @@ tcpc=$(ss -ta | grep ESTAB | wc -l)
 ulog=$(users | wc -w)
 
 # NETWORK
-ip=$(hostname -I)
-mac=$(ip link | grep "link/ether" | awk '{print $2}')
+ip=$(hostname -I | awk '{print $1}')
+mac=$(ip link | awk '/link\/ether/ {print $2}')
 
 # SUDO
 cmnd=$(journalctl _COMM=sudo | grep COMMAND | wc -l)
