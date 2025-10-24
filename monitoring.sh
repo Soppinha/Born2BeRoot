@@ -5,8 +5,6 @@ arch=$(uname -a)
 
 # 💾 CPU PHYSICAL
 cpuf=$(grep "physical id" /proc/cpuinfo | sort -u | wc -l)
-# se o campo não existir (ex: VM), mostra 1
-[ "$cpuf" -eq 0 ] && cpuf=1
 
 # 💽 CPU VIRTUAL
 cpuv=$(grep -c "^processor" /proc/cpuinfo)
@@ -23,7 +21,6 @@ disk_percent=$(df -m | awk '/^\/dev\// && !/\/boot/ {disk_u += $3; disk_t += $2}
 
 # ⚙️ CPU LOAD
 cpu_idle=$(vmstat 1 2 | tail -1 | awk '{print $15}')
-cpu_load=$(echo "scale=1; 100 - $cpu_idle" | bc)
 
 # 🕒 LAST BOOT
 lb=$(who -b | awk '{print $3, $4}')
