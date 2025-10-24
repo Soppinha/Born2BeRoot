@@ -12,7 +12,7 @@ cpuv=$(grep "processor" /proc/cpuinfo | wc -l)
 # RAM
 ram_total=$(free --mega | awk '$1 == "Mem:" {print $2}')
 ram_use=$(free --mega | awk '$1 == "Mem:" {print $3}')
-ram_percent=$(free --mega | awk '$1 == "Mem:" {printf("%.2f"), $3/$2*100}')
+ram_percent=$(free --mega | awk '$1 == "Mem:" {printf "%.2f", $3/$2*100}')
 
 # DISK
 disk_total=$(df -m | grep "/dev/" | grep -v "/boot" | awk '{disk_t += $2} END {printf ("%.1fGb\n"), disk_t/1024}')
@@ -25,7 +25,7 @@ cpu_op=$(expr 100 - $cpul)
 cpu_fin=$(printf "%.1f" $cpu_op)
 
 # LAST BOOT
-lb=$(who -b | awk '$1 == "system" {print $3 " " $4}')
+lb=$(who -b | awk '{print $3, $4}')
 
 # LVM USE
 lvmu=$(if [ $(lsblk | grep "lvm" | wc -l) -gt 0 ]; then echo yes; else echo no; fi)
