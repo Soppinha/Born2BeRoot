@@ -1,58 +1,58 @@
 #!/bin/bash
 
-# ARCH
+# ARCHITECTURE
 arch=$(uname -a)
 
 # CPU PHYSICAL
-cpuf=$(grep "physical id" /proc/cpuinfo | wc -l)
+cpuf=$(grep "physical id" /proc/cpuinfo | sort -u | wc -l)
+[ "$cpuf" -eq 0 ] && cpuf=1  # fallback para VMs
 
 # CPU VIRTUAL
-cpuv=$(grep "processor" /proc/cpuinfo | wc -l)
+cpuv=$(grep -c "^processor" /proc/cpuinfo)
 
-# RAM
+# RAM (funciona em qualquer idioma)
 ram_total=$(free --mega | awk 'NR==2 {print $2}')
 ram_use=$(free --mega | awk 'NR==2 {print $3}')
 ram_percent=$(free --mega | awk 'NR==2 {printf "%.2f", $3/$2*100}')
 
-
-# DISK
-disk_total=$(df -m | grep "/dev/" | grep -v "/boot" | awk '{disk_t += $2} END {printf ("%.1fGb\n"), disk_t/1024}')
-disk_use=$(df -m | grep "/dev/" | grep -v "/boot" | awk '{disk_u += $3} END {print disk_u}')
-disk_percent=$(df -m | grep "/dev/" | grep -v "/boot" | awk '{disk_u += $3} {disk_t+= $2} END {printf("%d"), disk_u/disk_t*100}')
+# DISK (todas partições, exceto /boot)
+disk_total=$(df -m | awk '/^\/dev\// && !/\/boot/ {t += $2} END {printf "%.1fGb", t/1024}')
+disk_use=$(df -m | awk '/^\/dev\// && !/\/boot/ {u += $3} END {print u}')
+disk_percent=$(df -m | awk '/^\/dev\// && !/\/boot/ {u += $3; t += $2} END {printf "%d", u/t*100}')
 
 # CPU LOAD
-cpul=$(vmstat 1 2 | tail -1 | awk '{printf $15}')
-cpu_op=$(expr 100 - $cpul)
-cpu_fin=$(printf "%.1f" $cpu_op)
+cpu_idle=$(vmstat 1 2 | tail -1 | awk '{print $15}')
+cpu_load=$(echo "scale=1; 100 - $cpu_idle" | bc)
 
-# LAST BOOT
+# LAST BOOT (data e hora, qualquer idioma)
 lb=$(who -b | awk '{print $(NF-1), $NF}')
 
 # LVM USE
-lvmu=$(if [ $(lsblk | grep "lvm" | wc -l) -gt 0 ]; then echo yes; else echo no; fi)
+lvmu=$(lsblk | grep -q "lvm" && echo yes || echo no)
 
-# TCP CONNEXIONS
-tcpc=$(ss -ta | grep ESTAB | wc -l)
+# TCP CONNECTIONS
+tcpc=$(ss -ta state established | wc -l)
 
-# USER LOG
+# USER LOGGED
 ulog=$(users | wc -w)
 
-# NETWORK
+# NETWORK (sem grep)
 ip=$(hostname -I | awk '{print $1}')
-mac=$(ip link | awk '/link\/ether/ {print $2}')
+mac=$(ip link | awk '/link\/ether/ {print $2; exit}')
 
-# SUDO
-cmnd=$(journalctl _COMM=sudo | grep COMMAND | wc -l)
+# SUDO COMMANDS
+cmnd=$(journalctl _COMM=sudo 2>/dev/null | grep COMMAND | wc -l)
 
+# OUTPUT
 wall "Architecture: $arch
-	CPU physical: $cpuf
-	vCPU: $cpuv
-	Memory Usage: $ram_use/${ram_total}MB ($ram_percent%)
-	Disk Usage: $disk_use/${disk_total} ($disk_percent%)
-	CPU load: $cpu_fin%
-	Last boot: $lb
-	LVM use: $lvmu
-	Connections TCP: $tcpc ESTABLISHED
-	User log: $ulog
-	Network: IP $ip ($mac)
-	Sudo: $cmnd cmd"
+CPU physical: $cpuf
+vCPU: $cpuv
+Memory Usage: ${ram_use}/${ram_total}MB (${ram_percent}%)
+Disk Usage: ${disk_use}/${disk_total} (${disk_percent}%)
+CPU load: ${cpu_load}%
+Last boot: $lb
+LVM use: $lvmu
+Connections TCP: $tcpc ESTABLISHED
+User log: $ulog
+Network: IP $ip ($mac)
+Sudo: $cmnd cmd"
